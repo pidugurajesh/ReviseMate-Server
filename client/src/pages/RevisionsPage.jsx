@@ -1,4 +1,6 @@
 import { useState } from "react";
+import confetti from "canvas-confetti";
+import { useToast } from "../context/ToastContext";
 import { Layers, AlertTriangle, CheckCircle, ArrowRight, Eye, RefreshCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AppLayout from "../components/AppLayout";
@@ -17,6 +19,7 @@ const RATINGS = [
 ];
 
 export default function RevisionsPage() {
+  const { addToast } = useToast();
   const { data, refetch } = useFetch("/revisions");
   const [activeRevision, setActiveRevision] = useState(null);
   
@@ -43,10 +46,17 @@ export default function RevisionsPage() {
         quality: finalQuality,
         notes: recallNotes,
       });
+      confetti({
+        particleCount: 120,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      addToast("Revision completed! Spaced interval updated. 🧠", "success");
       setActiveRevision(null);
       refetch();
     } catch (error) {
       console.error("Failed to complete revision:", error);
+      addToast("Failed to complete revision", "error");
     }
   };
 
@@ -114,6 +124,7 @@ export default function RevisionsPage() {
                   className={`${buttonSoft} px-4 py-1.5 text-xs text-slate-600 dark:text-slate-300 font-semibold`}
                   onClick={async () => {
                     await api.put(`/revisions/${item._id}/snooze`, { minutes: 120 });
+                    addToast("Revision snoozed for 2h ⏰", "info");
                     refetch();
                   }}
                 >

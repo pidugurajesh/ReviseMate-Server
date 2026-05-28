@@ -1,10 +1,13 @@
 import { useState } from "react";
+import confetti from "canvas-confetti";
+import { useToast } from "../context/ToastContext";
 import AppLayout from "../components/AppLayout";
 import { useFetch } from "../hooks/useFetch";
 import api from "../services/api";
 import { buttonPrimary, cardStyle, inputStyle, labelStyle } from "../utils/styles";
 
 function TodoItem({ todo, onChange }) {
+  const { addToast } = useToast();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     title: todo.title,
@@ -14,6 +17,7 @@ function TodoItem({ todo, onChange }) {
 
   const save = async () => {
     await api.put(`/todos/${todo._id}`, form);
+    addToast("Task updated", "success");
     setEditing(false);
     onChange();
   };
@@ -33,7 +37,7 @@ function TodoItem({ todo, onChange }) {
       ) : (
         <div>
           <p className={`font-semibold ${todo.completed ? "line-through opacity-60" : ""}`}>{todo.title}</p>
-          <p className="text-sm">
+          <p className="text-sm border-l-2 border-indigo-500 pl-2 mt-0.5 opacity-70">
             {todo.subject} • {todo.priority}
           </p>
         </div>
@@ -49,9 +53,20 @@ function TodoItem({ todo, onChange }) {
           </button>
         )}
         <button
-          className="px-3 py-1 rounded bg-emerald-600 text-white"
+          className="px-3 py-1 rounded bg-emerald-650 hover:bg-emerald-600 text-white"
           onClick={async () => {
-            await api.put(`/todos/${todo._id}`, { completed: !todo.completed });
+            const nextCompleted = !todo.completed;
+            await api.put(`/todos/${todo._id}`, { completed: nextCompleted });
+            if (nextCompleted) {
+              confetti({
+                particleCount: 80,
+                spread: 50,
+                origin: { y: 0.8 }
+              });
+              addToast("Task completed! 🎉", "success");
+            } else {
+              addToast("Task set to pending", "info");
+            }
             onChange();
           }}
         >
@@ -61,6 +76,7 @@ function TodoItem({ todo, onChange }) {
           className="px-3 py-1 rounded bg-rose-600 text-white"
           onClick={async () => {
             await api.delete(`/todos/${todo._id}`);
+            addToast("Task deleted", "info");
             onChange();
           }}
         >
@@ -72,6 +88,7 @@ function TodoItem({ todo, onChange }) {
 }
 
 export default function TodosPage() {
+  const { addToast } = useToast();
   const [form, setForm] = useState({ title: "", subject: "", priority: "Medium" });
   const [q, setQ] = useState("");
   const { data, refetch } = useFetch(`/todos?q=${encodeURIComponent(q)}`);
@@ -79,6 +96,7 @@ export default function TodosPage() {
   const add = async (e) => {
     e.preventDefault();
     await api.post("/todos", form);
+    addToast("New task added! 📝", "success");
     setForm({ title: "", subject: "", priority: "Medium" });
     refetch();
   };

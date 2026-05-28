@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "../context/ToastContext";
 import {
   Play,
   Pause,
@@ -13,6 +14,8 @@ import {
   Coffee,
   BrainCircuit,
   Volume2,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import AppLayout from "../components/AppLayout";
 import { useFetch } from "../hooks/useFetch";
@@ -49,6 +52,7 @@ const playChime = () => {
 };
 
 export default function DashboardPage() {
+  const { addToast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: revisions } = useFetch("/revisions");
@@ -63,7 +67,29 @@ export default function DashboardPage() {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [timerActive, setTimerActive] = useState(false);
   const [showTimerModal, setShowTimerModal] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const intervalRef = useRef(null);
+
+  const quotes = [
+    "Focus is a muscle, and you are building it right now.",
+    "One Pomodoro session at a time. You've got this.",
+    "Deep work yields deep results. Eliminate all distractions.",
+    "Don't count the minutes; make the minutes count.",
+    "Your future self will thank you for the effort you put in today.",
+    "Quiet the mind, focus the gaze, and let the intellect work.",
+    "Success is the sum of small efforts repeated day in and day out.",
+  ];
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  // Rotate quotes every 12 seconds while timer is active
+  useEffect(() => {
+    if (timerActive) {
+      const qInterval = setInterval(() => {
+        setQuoteIndex((prev) => (prev + 1) % quotes.length);
+      }, 12000);
+      return () => clearInterval(qInterval);
+    }
+  }, [timerActive]);
 
   const getModeDuration = (mode) => {
     if (mode === "study") return 25 * 60;
@@ -85,7 +111,12 @@ export default function DashboardPage() {
             setTimerActive(false);
             playChime();
             if (timerMode === "study") {
+              addToast("Focus session complete! 🎉 Great job.", "success");
+              setIsFullscreen(false);
               setShowTimerModal(true);
+            } else {
+              addToast("Break complete! Time to focus. 🧠", "info");
+              setIsFullscreen(false);
             }
             return 0;
           }
@@ -100,7 +131,16 @@ export default function DashboardPage() {
     };
   }, [timerActive, timerMode]);
 
-  const toggleTimer = () => setTimerActive((prev) => !prev);
+  const toggleTimer = () => {
+    setTimerActive((prev) => {
+      const nextActive = !prev;
+      if (nextActive && timerMode === "study") {
+        setIsFullscreen(true);
+        addToast("Entering Fullscreen Deep Focus Mode 🧘", "info");
+      }
+      return nextActive;
+    });
+  };
   const resetTimer = () => {
     setTimerActive(false);
     setTimeLeft(getModeDuration(timerMode));
@@ -287,6 +327,13 @@ export default function DashboardPage() {
             >
               <RotateCcw size={18} />
             </button>
+            <button
+              onClick={() => setIsFullscreen(true)}
+              className={`${buttonSoft} p-3 rounded-full flex items-center justify-center text-slate-655 dark:text-slate-300`}
+              title="Enter Fullscreen Deep Focus"
+            >
+              <Maximize2 size={18} />
+            </button>
           </div>
         </div>
 
@@ -384,6 +431,111 @@ export default function DashboardPage() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Focus Overlay */}
+      <AnimatePresence>
+        {isFullscreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950 text-white z-[9999] flex flex-col justify-between p-8"
+          >
+            {/* Background glowing mesh */}
+            <div className="glow-orb h-[40rem] w-[40rem] bg-indigo-500/10 top-[-10%] left-[-10%] filter blur-[100px] opacity-60 animate-pulse pointer-events-none" />
+            <div className="glow-orb h-[40rem] w-[40rem] bg-fuchsia-500/10 bottom-[-10%] right-[-10%] filter blur-[100px] opacity-60 animate-pulse pointer-events-none" />
+
+            {/* Top Bar */}
+            <div className="flex items-center justify-between z-10">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="text-indigo-400 animate-pulse" size={24} />
+                <span className="font-extrabold text-sm sm:text-base tracking-wider uppercase text-slate-400">
+                  Deep Focus Mode
+                </span>
+              </div>
+              <button
+                onClick={() => setIsFullscreen(false)}
+                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-semibold flex items-center gap-1.5"
+              >
+                <Minimize2 size={14} /> Exit Fullscreen
+              </button>
+            </div>
+
+            {/* Center Timer */}
+            <div className="flex flex-col items-center justify-center text-center z-10 flex-1 my-10 max-w-xl mx-auto space-y-8">
+              <div className="space-y-2">
+                <h4 className="text-xs sm:text-sm uppercase tracking-widest text-indigo-400 font-extrabold">
+                  {timerMode === "study" ? "Time to Learn" : "Rest Period"}
+                </h4>
+                <p className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+                  {timerMode === "study" ? "Focus on the task" : "Recharge your energy"}
+                </p>
+              </div>
+
+              {/* Huge Timer Digital Representation */}
+              <div className="relative flex items-center justify-center w-72 h-72 sm:w-80 sm:h-80">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="50%"
+                    cy="50%"
+                    r="40%"
+                    className="stroke-slate-800"
+                    strokeWidth="8"
+                    fill="transparent"
+                  />
+                  <motion.circle
+                    cx="50%"
+                    cy="50%"
+                    r="40%"
+                    className="stroke-indigo-500"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={2 * Math.PI * 140}
+                    animate={{ strokeDashoffset: (2 * Math.PI * 140) * (1 - progressPercent / 100) }}
+                    transition={{ duration: 1, ease: "linear" }}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute text-center">
+                  <h1 className="text-7xl sm:text-8xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+                    {formatTime(timeLeft)}
+                  </h1>
+                </div>
+              </div>
+
+              {/* Rotating Motivational Quotes */}
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={quoteIndex}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.8 }}
+                  className="text-sm sm:text-base text-slate-400 italic font-medium max-w-md h-12"
+                >
+                  "{quotes[quoteIndex]}"
+                </motion.p>
+              </AnimatePresence>
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="flex justify-center items-center gap-6 z-10">
+              <button
+                onClick={toggleTimer}
+                className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:scale-105 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20"
+              >
+                {timerActive ? <Pause size={24} /> : <Play size={24} className="translate-x-0.5" />}
+              </button>
+              <button
+                onClick={resetTimer}
+                className="w-12 h-12 rounded-full bg-white/5 border border-white/15 hover:bg-white/10 active:scale-95 text-slate-300 flex items-center justify-center"
+              >
+                <RotateCcw size={18} />
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </AppLayout>
