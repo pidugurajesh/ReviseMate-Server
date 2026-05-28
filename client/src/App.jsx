@@ -9,12 +9,14 @@ const StudiedPage = lazy(() => import("./pages/StudiedPage"));
 const RevisionsPage = lazy(() => import("./pages/RevisionsPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const HomePage = lazy(() => import("./pages/HomePage"));
 
 export default function App() {
   return (
     <BrowserRouter>
       <Suspense fallback={<div className="p-8">Loading page...</div>}>
         <Routes>
+          <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/register" element={<AuthPage isRegister />} />
           <Route
@@ -65,7 +67,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
