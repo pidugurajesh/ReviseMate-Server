@@ -41,6 +41,10 @@ const markRevisionComplete = async (req, res) => {
     topic.interval = sm2.interval;
     topic.easinessFactor = sm2.easinessFactor;
 
+    if (req.body.notes !== undefined) {
+      topic.notes = req.body.notes;
+    }
+
     if (sm2.interval > 0) {
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + sm2.interval);

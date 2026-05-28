@@ -24,6 +24,7 @@ export default function RevisionsPage() {
   const [cardIndex, setCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [ratings, setRatings] = useState([]); // Array of quality ratings per card
+  const [recallNotes, setRecallNotes] = useState("");
 
   const due = data.filter((r) => r.status === "due");
   const completed = data.filter((r) => r.status === "completed").slice(0, 6);
@@ -33,11 +34,15 @@ export default function RevisionsPage() {
     setCardIndex(0);
     setShowAnswer(false);
     setRatings([]);
+    setRecallNotes(revision.topicId?.notes || "");
   };
 
   const submitRevisionScore = async (finalQuality) => {
     try {
-      await api.put(`/revisions/${activeRevision._id}/complete`, { quality: finalQuality });
+      await api.put(`/revisions/${activeRevision._id}/complete`, {
+        quality: finalQuality,
+        notes: recallNotes,
+      });
       setActiveRevision(null);
       refetch();
     } catch (error) {
@@ -168,6 +173,20 @@ export default function RevisionsPage() {
                 >
                   Cancel
                 </button>
+              </div>
+
+              {/* Recall Notes/Summary plain text area */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Write down your recall points or update notes:
+                </p>
+                <textarea
+                  className="w-full rounded-2xl border border-slate-300/70 dark:border-slate-700/70 bg-white/85 dark:bg-slate-900/55 px-4 py-2 outline-none transition-all duration-300 focus:ring-2 focus:ring-indigo-500/40 text-xs sm:text-sm"
+                  placeholder="Type your recall points or summary here to save..."
+                  rows={3}
+                  value={recallNotes}
+                  onChange={(e) => setRecallNotes(e.target.value)}
+                />
               </div>
 
               {/* Flashcard review Mode */}

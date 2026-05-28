@@ -20,19 +20,79 @@ export default function AppLayout({ children }) {
   ];
 
   const fetchNotifications = async () => {
-    const { data } = await api.get("/revisions");
-    const due = data.filter((r) => r.status === "due");
-    setNotifications(
-      due.map((item) => ({
-        id: item._id,
-        text: `${item.topicId?.topic || "Topic"} is ${item.overdue ? "overdue" : "due today"}`,
-      }))
-    );
+    if (!user) return;
+    try {
+      const [revisionsRes, todosRes] = await Promise.all([
+        api.get("/revisions"),
+        api.get("/todos?status=pending"),
+      ]);
+      const dueRevisions = revisionsRes.data.filter((r) => r.status === "due");
+      const pendingTodos = todosRes.data;
+
+      setNotifications([
+        ...dueRevisions.map((item) => ({
+          id: item._id,
+          text: `Revision due: ${item.topicId?.topic || "Topic"}`,
+        })),
+        ...pendingTodos.map((item) => ({
+          id: item._id,
+          text: `Pending task: ${item.title || "Task"}`,
+        })),
+      ]);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
   };
 
   useEffect(() => {
+    if (!user) return;
+
     fetchNotifications();
-  }, []);
+
+    const checkReminderTime = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      
+      // If it is 8:00 PM (Hour 20)
+      if (currentHour === 20) {
+        const todayStr = now.toDateString();
+        const lastSent = localStorage.getItem("last8pmReminderDate");
+        
+        if (lastSent !== todayStr) {
+          Promise.all([
+            api.get("/todos?status=pending"),
+            api.get("/revisions"),
+          ]).then(([todosRes, revisionsRes]) => {
+            const pendingCount = todosRes.data.length;
+            const dueCount = revisionsRes.data.filter((r) => r.status === "due").length;
+            
+            if (pendingCount > 0 || dueCount > 0) {
+              if ("Notification" in window) {
+                const notify = () => {
+                  new Notification("ReviseMate Nightly Reminder", {
+                    body: `You have ${pendingCount} pending tasks and ${dueCount} due revisions left for tonight. Keep your streak active!`,
+                  });
+                  localStorage.setItem("last8pmReminderDate", todayStr);
+                };
+
+                if (Notification.permission === "granted") {
+                  notify();
+                } else if (Notification.permission !== "denied") {
+                  Notification.requestPermission().then(permission => {
+                    if (permission === "granted") notify();
+                  });
+                }
+              }
+            }
+          }).catch(err => console.error("Error in 8pm reminder:", err));
+        }
+      }
+    };
+
+    checkReminderTime();
+    const interval = setInterval(checkReminderTime, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
