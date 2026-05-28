@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "../context/AuthContext";
 import { useFetch } from "../hooks/useFetch";
@@ -9,6 +9,12 @@ export default function ProfilePage() {
   const { user, setUser } = useAuth();
   const { data: analytics } = useFetch("/analytics", {});
   const [form, setForm] = useState({ username: user?.username || "", email: user?.email || "" });
+
+  useEffect(() => {
+    if (user) {
+      setForm({ username: user.username, email: user.email });
+    }
+  }, [user]);
 
   const save = async (e) => {
     e.preventDefault();

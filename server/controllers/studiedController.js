@@ -42,33 +42,44 @@ const createStudiedTopic = async (req, res) => {
 
 const updateStudiedTopic = async (req, res) => {
   try {
-    const refreshedStudiedDate = new Date();
-    const firstRevisionDate = getFirstRevisionDate(refreshedStudiedDate);
+    const { topic, subject, notes, confidence, duration, flashcards, resetProgress } = req.body;
+    
+    const topicUpdate = {};
+    if (topic !== undefined) topicUpdate.topic = topic;
+    if (subject !== undefined) topicUpdate.subject = subject;
+    if (notes !== undefined) topicUpdate.notes = notes;
+    if (confidence !== undefined) topicUpdate.confidence = confidence;
+    if (duration !== undefined) topicUpdate.duration = duration;
+    if (flashcards !== undefined) topicUpdate.flashcards = flashcards;
 
-    const topic = await StudiedTopic.findOneAndUpdate(
+    if (resetProgress) {
+      const refreshedStudiedDate = new Date();
+      const firstRevisionDate = getFirstRevisionDate(refreshedStudiedDate);
+      topicUpdate.studiedDate = refreshedStudiedDate;
+      topicUpdate.revisionDates = [firstRevisionDate];
+      topicUpdate.repetitionCount = 0;
+      topicUpdate.easinessFactor = 2.5;
+      topicUpdate.interval = 0;
+    }
+
+    const updatedTopic = await StudiedTopic.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
-      {
-        ...req.body,
-        studiedDate: refreshedStudiedDate,
-        revisionDates: [firstRevisionDate],
-        repetitionCount: 0,
-        easinessFactor: 2.5,
-        interval: 0,
-      },
+      topicUpdate,
       { returnDocument: "after" }
     );
 
-    if (topic) {
-      await Revision.deleteMany({ topicId: topic._id, userId: req.user.id });
+    if (resetProgress && updatedTopic) {
+      await Revision.deleteMany({ topicId: updatedTopic._id, userId: req.user.id });
+      const firstRevisionDate = updatedTopic.revisionDates[0];
       await Revision.create({
         userId: req.user.id,
-        topicId: topic._id,
+        topicId: updatedTopic._id,
         revisionDate: firstRevisionDate,
       });
       await updateStreak(req.user.id);
     }
 
-    res.json(topic);
+    res.json(updatedTopic);
   } catch (error) {
     res.status(500).json({ message: "Failed to update studied topic", error: error.message });
   }

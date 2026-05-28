@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    const connUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/revisemate";
+    await mongoose.connect(connUri);
     console.log("MongoDB connected");
   } catch (error) {
     console.error("MongoDB connection failed:", error.message);

@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { checkAndResetStreak } = require("../utils/streakUtils");
 
 const createToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
@@ -43,6 +44,8 @@ const loginUser = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ message: "Invalid credentials" });
 
+    await checkAndResetStreak(user);
+
     const token = createToken(user._id);
     return res.json({
       token,
@@ -61,7 +64,12 @@ const loginUser = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    await checkAndResetStreak(user);
+
+    user.password = undefined;
     return res.json(user);
   } catch (error) {
     return res.status(500).json({ message: "Failed to fetch profile", error: error.message });

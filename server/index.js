@@ -15,7 +15,7 @@ const app = express();
 connectDB();
 
 const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(",")
+  ? process.env.CLIENT_URL.split(",").map((url) => url.trim())
   : ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173"];
 
 app.use(

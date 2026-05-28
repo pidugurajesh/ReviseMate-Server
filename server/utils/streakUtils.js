@@ -17,7 +17,7 @@ const updateStreak = async (userId) => {
       lastActive.setHours(0, 0, 0, 0);
 
       const diffTime = today.getTime() - lastActive.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 1) {
         // Consecutive day study
@@ -39,4 +39,25 @@ const updateStreak = async (userId) => {
   }
 };
 
-module.exports = { updateStreak };
+const checkAndResetStreak = async (user) => {
+  try {
+    if (!user || !user.lastActiveDate) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastActive = new Date(user.lastActiveDate);
+    lastActive.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - lastActive.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      user.currentStreak = 0;
+      await user.save();
+    }
+  } catch (error) {
+    console.error("Failed to check and reset streak:", error);
+  }
+};
+
+module.exports = { updateStreak, checkAndResetStreak };
