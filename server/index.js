@@ -27,7 +27,8 @@ const allowedOrigins = process.env.CLIENT_URL
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
+      const isVercelPreview = origin && /^https:\/\/(?:revise-mate-server|revisemate-server)-.*\.vercel\.app$/i.test(origin);
+      if (!origin || allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*") || isVercelPreview) {
         callback(null, true);
       } else {
         callback(new Error(`Origin ${origin} not allowed by CORS`));
