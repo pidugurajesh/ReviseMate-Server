@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(1200px 600px at 20% 10%, rgba(99, 102, 241, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 80% 20%, rgba(6, 182, 212, 0.14), transparent 55%),
+    radial-gradient(900px 600px at 50% 90%, rgba(168, 85, 247, 0.12), transparent 60%);
+  background-attachment: fixed;
+  color: #0f172a;
+}
+
+.dark body {
+  background: radial-gradient(1200px 600px at 20% 10%, rgba(99, 102, 241, 0.22), transparent 60%),
+    radial-gradient(900px 500px at 80% 20%, rgba(6, 182, 212, 0.16), transparent 55%),
+    radial-gradient(900px 600px at 50% 90%, rgba(168, 85, 247, 0.16), transparent 60%);
+  color: #e2e8f0;
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+#root {
+  min-height: 100%;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.55) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.9), rgba(168, 85, 247, 0.9));
+}
+
+.glow-orb {
+  position: fixed;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(60px);
+  z-index: 0;
+  opacity: 0.45;
+}
+
+/* Global button and interactive element styles */
+button,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+[role="button"]:disabled {
+  cursor: not-allowed;
+}
+
+/* Base interactive transitions */
+button,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:not(:disabled):hover,
+input[type="button"]:not(:disabled):hover,
+input[type="submit"]:not(:disabled):hover,
+[role="button"]:not(:disabled):hover {
+  filter: brightness(1.05);
+}
+
+button:not(:disabled):active,
+input[type="button"]:not(:disabled):active,
+input[type="submit"]:not(:disabled):active,
+[role="button"]:not(:disabled):active {
+  transform: scale(0.98);
+}
