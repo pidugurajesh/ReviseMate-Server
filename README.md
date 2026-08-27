@@ -1,6 +1,8 @@
 \# ReviseMate
 
 
+Three-environment deployment workflow: dev → test → main
+
 
 ReviseMate is a web application for students to manage their study activities and learning progress.
 
